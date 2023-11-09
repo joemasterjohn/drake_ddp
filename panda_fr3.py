@@ -173,6 +173,7 @@ def create_system_model(plant, scene_graph):
 ####################################
 builder = DiagramBuilder()
 plant, scene_graph = AddMultibodyPlantSceneGraph(builder, dt)
+plant.set_discrete_contact_solver(DiscreteContactSolver.kSap)
 plant, scene_graph = create_system_model(plant, scene_graph)
 
 # Connect to visualizer
@@ -193,6 +194,7 @@ if optimize:
     # Create a system model (w/o visualizer) to do the optimization over
     builder_ = DiagramBuilder()
     plant_, scene_graph_ = AddMultibodyPlantSceneGraph(builder_, dt)
+    plant_.set_discrete_contact_solver(DiscreteContactSolver.kSap)
     plant_, scene_graph_ = create_system_model(plant_, scene_graph_)
     builder_.ExportInput(plant_.get_actuation_input_port(), "control")
     system_ = builder_.Build()

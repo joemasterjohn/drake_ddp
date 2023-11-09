@@ -59,6 +59,7 @@ def create_system_model(plant):
 ####################################
 builder = DiagramBuilder()
 plant, scene_graph = AddMultibodyPlantSceneGraph(builder, dt)
+plant.set_discrete_contact_solver(DiscreteContactSolver.kSap)
 plant = create_system_model(plant)
 assert plant.geometry_source_is_registered()
 
@@ -88,6 +89,7 @@ plant_context = diagram.GetMutableSubsystemContext(
 
 # System model for the trajectory optimizer
 plant_ = MultibodyPlant(dt)
+plant_.set_discrete_contact_solver(DiscreteContactSolver.kSap)
 plant_ = create_system_model(plant_)
 input_port_index = plant_.get_actuation_input_port().get_index()
 

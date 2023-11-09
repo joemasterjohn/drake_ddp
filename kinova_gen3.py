@@ -96,7 +96,7 @@ mu_static = 0.3
 mu_dynamic = 0.2
 
 contact_model = ContactModel.kHydroelastic  # Hydroelastic, Point, or HydroelasticWithFallback
-mesh_type = HydroelasticContactRepresentation.kTriangle  # Triangle or Polygon
+mesh_type = HydroelasticContactRepresentation.kPolygon  # Triangle or Polygon
 
 ####################################
 # Tools for system setup
@@ -106,7 +106,7 @@ def create_system_model(plant, scene_graph):
     # Add the kinova arm model from urdf
     # (rigid hydroelastic contact included)
     urdf = "models/kinova_gen3/urdf/GEN3_URDF_V12.urdf"
-    arm = Parser(plant).AddModelFromFile(urdf)
+    arm = Parser(plant).AddModels(urdf)[0] # Only one model in the file.
     X_robot = RigidTransform()
     X_robot.set_translation([0,0,0.015])  # base attachment sets the robot up a bit
     plant.WeldFrames(plant.world_frame(),
@@ -116,7 +116,7 @@ def create_system_model(plant, scene_graph):
     # Add an unactuated gripper from urdf
     # (rigid hydroelastic contact included)
     urdf = "models/2f_85_gripper/urdf/robotiq_2f_85_static.urdf"
-    gripper = Parser(plant).AddModelFromFile(urdf)
+    gripper = Parser(plant).AddModels(urdf)[0] # Only one model in the file
     X_grip = RigidTransform()
     X_grip.set_rotation(RotationMatrix(RollPitchYaw([0,0,np.pi/2])))
     plant.WeldFrames(plant.GetFrameByName("end_effector_link",arm),
@@ -217,6 +217,7 @@ def create_system_model(plant, scene_graph):
 ####################################
 builder = DiagramBuilder()
 plant, scene_graph = AddMultibodyPlantSceneGraph(builder, dt)
+plant.set_discrete_contact_solver(DiscreteContactSolver.kSap)
 plant, scene_graph = create_system_model(plant, scene_graph)
 
 # Connect to visualizer
@@ -244,6 +245,7 @@ if optimize:
     # Create a system model (w/o visualizer) to do the optimization over
     builder_ = DiagramBuilder()
     plant_, scene_graph_ = AddMultibodyPlantSceneGraph(builder_, dt)
+    plant_.set_discrete_contact_solver(DiscreteContactSolver.kSap)
     plant_, scene_graph_ = create_system_model(plant_, scene_graph_)
     builder_.ExportInput(plant_.get_actuation_input_port(), "control")
     system_ = builder_.Build()

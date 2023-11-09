@@ -44,9 +44,10 @@ Qf = np.diag([200,200,10,10])
 
 # Contact model parameters
 dissipation = 0.0              # controls "bounciness" of collisions: lower is bouncier
-hydroelastic_modulus = 2e6     # controls "squishiness" of collisions: lower is squishier
+hydroelastic_modulus = 2e5     # controls "squishiness" of collisions: lower is squishier
 resolution_hint = 0.05         # smaller means a finer mesh
 penetration_allowance = 0.008  # controls "softenss" of collisions for point contact model
+mu = 0.0                       # coefficient of friction
 
 contact_model = ContactModel.kHydroelastic  # Hydroelastic, Point, or HydroelasticWithFallback
 mesh_type = HydroelasticContactRepresentation.kPolygon  # Triangle or Polygon
@@ -68,9 +69,9 @@ def create_system_model(plant):
     AddCompliantHydroelasticProperties(resolution_hint, hydroelastic_modulus, ball_props)
     if contact_model == ContactModel.kPoint:
         plant.set_penetration_allowance(penetration_allowance)
-        AddContactMaterial(friction=CoulombFriction(), properties=ball_props)
+        AddContactMaterial(friction=CoulombFriction(mu, mu), properties=ball_props)
     else:
-        AddContactMaterial(dissipation=dissipation, friction=CoulombFriction(), properties=ball_props)
+        AddContactMaterial(dissipation=dissipation, friction=CoulombFriction(mu, mu), properties=ball_props)
     plant.RegisterCollisionGeometry(pole, X_BP, Sphere(radius), "collision", ball_props)
     orange = np.array([1.0, 0.55, 0.0, 0.5])
     plant.RegisterVisualGeometry(pole, X_BP, Sphere(radius), "visual", orange)
@@ -90,9 +91,9 @@ def create_system_model(plant):
     wall_props = ProximityProperties()
     AddRigidHydroelasticProperties(wall_props)
     if contact_model == ContactModel.kPoint:
-        AddContactMaterial(friction=CoulombFriction(), properties=wall_props)
+        AddContactMaterial(friction=CoulombFriction(mu, mu), properties=wall_props)
     else:
-        AddContactMaterial(dissipation=dissipation, friction=CoulombFriction(), properties=wall_props)
+        AddContactMaterial(dissipation=dissipation, friction=CoulombFriction(mu, mu), properties=wall_props)
     plant.RegisterCollisionGeometry(wall, RigidTransform(), 
             Box(l,w,h), "wall_collision", wall_props)
     
@@ -108,6 +109,7 @@ def create_system_model(plant):
 ####################################
 builder = DiagramBuilder()
 plant, scene_graph = AddMultibodyPlantSceneGraph(builder, dt)
+plant.set_discrete_contact_solver(DiscreteContactSolver.kSap)
 plant = create_system_model(plant)
 
 # Connect to visualizer
@@ -134,6 +136,7 @@ plant_context = diagram.GetMutableSubsystemContext(plant, diagram_context)
 # any visualizer stuff. 
 builder_ = DiagramBuilder()
 plant_, scene_graph_ = AddMultibodyPlantSceneGraph(builder_, dt)
+plant_.set_discrete_contact_solver(DiscreteContactSolver.kSap)
 plant_ = create_system_model(plant_)
 builder_.ExportInput(plant_.get_actuation_input_port(), "control")
 system_ = builder_.Build()
