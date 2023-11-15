@@ -18,6 +18,7 @@ import utils_derivs_interpolation
 
 T = 3           # total simulation time (S)
 dt = 0.004      # simulation timestep
+use_sap = True
 
 # Parameters for derivative interpolation
 use_derivative_interpolation = False    # Use derivative interpolation
@@ -31,7 +32,7 @@ iterative_error_threshold = 0.00005     # Error threshold to trigger new key-poi
 # must be "ilqr" or "sqp"
 method = "ilqr"
 MPC = False                         # MPC only works with ilqr for now
-meshcat_visualisation = False        # Visualisation with meshcat or drake visualizer
+meshcat_visualisation = True        # Visualisation with meshcat or drake visualizer
 
 # Initial state
 x0 = np.array([0,0,0,0])
@@ -59,7 +60,8 @@ def create_system_model(plant):
 ####################################
 builder = DiagramBuilder()
 plant, scene_graph = AddMultibodyPlantSceneGraph(builder, dt)
-plant.set_discrete_contact_solver(DiscreteContactSolver.kSap)
+if use_sap:
+  plant.set_discrete_contact_solver(DiscreteContactSolver.kSap)
 plant = create_system_model(plant)
 assert plant.geometry_source_is_registered()
 
@@ -89,7 +91,8 @@ plant_context = diagram.GetMutableSubsystemContext(
 
 # System model for the trajectory optimizer
 plant_ = MultibodyPlant(dt)
-plant_.set_discrete_contact_solver(DiscreteContactSolver.kSap)
+if use_sap:
+  plant_.set_discrete_contact_solver(DiscreteContactSolver.kSap)
 plant_ = create_system_model(plant_)
 input_port_index = plant_.get_actuation_input_port().get_index()
 

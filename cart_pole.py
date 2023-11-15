@@ -12,7 +12,7 @@ from ilqr import IterativeLinearQuadraticRegulator
 import time
 import utils_derivs_interpolation
 
-meshcat_visualisation = False
+meshcat_visualisation = True
 
 ####################################
 # Parameters

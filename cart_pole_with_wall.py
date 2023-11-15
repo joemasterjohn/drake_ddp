@@ -13,15 +13,15 @@ from pydrake.all import *
 from ilqr import IterativeLinearQuadraticRegulator
 import utils_derivs_interpolation
 
-meshcat_visualisation = False
+meshcat_visualisation = True
 
 ####################################
 # Parameters
 ####################################
 
-T = 1.0 
+T = 5.0 
 dt = 1e-2
-playback_rate = 0.2
+playback_rate = 0.5
 
 # Parameters for derivative interpolation
 use_derivative_interpolation = False    # Use derivative interpolation
@@ -32,19 +32,19 @@ jerk_threshold = 0.0007                 # Jerk threshold to trigger new key-poin
 iterative_error_threshold = 0.00005     # Error threshold to trigger new key-point (only used in iterativeError)
 
 # Initial state
-x0 = np.array([0,np.pi+0.5,0.0,0])
+x0 = np.array([-0.1,np.pi + 0.2, 0,0])
 
 # Target state
 x_nom = np.array([0,np.pi,0,0])
 
 # Quadratic cost
 Q = np.diag([0.1,1,0.01,0.01])
-R = 0.001*np.eye(1)
+R = 1e-3*np.eye(1)
 Qf = np.diag([200,200,10,10])
 
 # Contact model parameters
-dissipation = 0.0              # controls "bounciness" of collisions: lower is bouncier
-hydroelastic_modulus = 2e5     # controls "squishiness" of collisions: lower is squishier
+dissipation = 5.0              # controls "bounciness" of collisions: lower is bouncier
+hydroelastic_modulus = 1e7     # controls "squishiness" of collisions: lower is squishier
 resolution_hint = 0.05         # smaller means a finer mesh
 penetration_allowance = 0.008  # controls "softenss" of collisions for point contact model
 mu = 0.0                       # coefficient of friction
@@ -76,26 +76,34 @@ def create_system_model(plant):
     orange = np.array([1.0, 0.55, 0.0, 0.5])
     plant.RegisterVisualGeometry(pole, X_BP, Sphere(radius), "visual", orange)
     
-    # Add a wall with rigid hydroelastic contact
-    l,w,h = (0.1,1,2)   
-    I_W = SpatialInertia(1, np.zeros(3), UnitInertia.SolidBox(l,w,h))
-    wall_instance = plant.AddModelInstance("wall")
-    wall = plant.AddRigidBody("wall", wall_instance, I_W)
-    wall_frame = plant.GetFrameByName("wall", wall_instance)
-    X_W = RigidTransform()
-    X_W.set_translation([-0.5,0,0])
-    plant.WeldFrames(plant.world_frame(), wall_frame, X_W)
-    
-    plant.RegisterVisualGeometry(wall, RigidTransform(), Box(l,w,h), "wall_visual", orange)
+    # Add a box with compliant hydroelastic contact to the cart body.
+    bx,by,bz = 0.24, 0.12, 0.12
+    cart = plant.GetBodyByName("Cart")
+    plant.RegisterCollisionGeometry(cart, X_BP, Sphere(bx/2), "cart_collision", ball_props)
+    plant.RegisterVisualGeometry(cart, X_BP, Sphere(bx/2), "cart_collision_visual", orange)
+
+    for i in range(2):
+      # Add a wall with rigid hydroelastic contact
+      l,w,h = (0.1,1,2)   
+      name = "wall_" + str(i)
+      I_W = SpatialInertia(1, np.zeros(3), UnitInertia.SolidBox(l,w,h))
+      wall_instance = plant.AddModelInstance(name)
+      wall = plant.AddRigidBody(name, wall_instance, I_W)
+      wall_frame = plant.GetFrameByName(name, wall_instance)
+      X_W = RigidTransform()
+      X_W.set_translation([-0.5 + i,0,0])
+      plant.WeldFrames(plant.world_frame(), wall_frame, X_W)
+      
+      plant.RegisterVisualGeometry(wall, RigidTransform(), Box(l,w,h), name + "_visual", orange)
    
-    wall_props = ProximityProperties()
-    AddRigidHydroelasticProperties(wall_props)
-    if contact_model == ContactModel.kPoint:
-        AddContactMaterial(friction=CoulombFriction(mu, mu), properties=wall_props)
-    else:
-        AddContactMaterial(dissipation=dissipation, friction=CoulombFriction(mu, mu), properties=wall_props)
-    plant.RegisterCollisionGeometry(wall, RigidTransform(), 
-            Box(l,w,h), "wall_collision", wall_props)
+      wall_props = ProximityProperties()
+      AddRigidHydroelasticProperties(wall_props)
+      if contact_model == ContactModel.kPoint:
+          AddContactMaterial(friction=CoulombFriction(mu, mu), properties=wall_props)
+      else:
+          AddContactMaterial(dissipation=dissipation, friction=CoulombFriction(mu, mu), properties=wall_props)
+      plant.RegisterCollisionGeometry(wall, RigidTransform(), 
+              Box(l,w,h), name + "_collision", wall_props)
     
     # Choose contact model
     plant.set_contact_surface_representation(mesh_type)
