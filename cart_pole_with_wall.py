@@ -19,7 +19,7 @@ meshcat_visualisation = True
 # Parameters
 ####################################
 
-T = 5.0 
+T = 10.0 
 dt = 1e-2
 playback_rate = 0.5
 
@@ -32,18 +32,18 @@ jerk_threshold = 0.0007                 # Jerk threshold to trigger new key-poin
 iterative_error_threshold = 0.00005     # Error threshold to trigger new key-point (only used in iterativeError)
 
 # Initial state
-x0 = np.array([-0.1,np.pi + 0.2, 0,0])
+x0 = np.array([-0.1, np.pi + 0.2, 0,0])
 
 # Target state
-x_nom = np.array([0,np.pi,0,0])
+x_nom = np.array([-0.1,np.pi,0,0])
 
 # Quadratic cost
-Q = np.diag([0.1,1,0.01,0.01])
+Q = np.diag([1e-1,1,1e-4,1e-3])
 R = 1e-3*np.eye(1)
-Qf = np.diag([200,200,10,10])
+Qf = np.diag([100,200,200,200])
 
 # Contact model parameters
-dissipation = 5.0              # controls "bounciness" of collisions: lower is bouncier
+dissipation = 1.0              # controls "bounciness" of collisions: lower is bouncier
 hydroelastic_modulus = 1e7     # controls "squishiness" of collisions: lower is squishier
 resolution_hint = 0.05         # smaller means a finer mesh
 penetration_allowance = 0.008  # controls "softenss" of collisions for point contact model
