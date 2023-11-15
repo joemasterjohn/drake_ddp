@@ -39,7 +39,7 @@ x_nom = np.array([0,np.pi,0,0])
 
 # Quadratic cost
 Q = np.diag([1e-1,1e-1,1e-3,1e-3])
-R = 1e-3*np.eye(1)
+R = 2e-3*np.eye(1)
 Qf = np.diag([200,300,20,20])
 
 # Contact model parameters
@@ -91,7 +91,7 @@ def create_system_model(plant):
       wall = plant.AddRigidBody(name, wall_instance, I_W)
       wall_frame = plant.GetFrameByName(name, wall_instance)
       X_W = RigidTransform()
-      X_W.set_translation([-0.5 + 1*i,0,0])
+      X_W.set_translation([-0.4 + 0.8*i,0,0])
       plant.WeldFrames(plant.world_frame(), wall_frame, X_W)
       
       plant.RegisterVisualGeometry(wall, RigidTransform(), Box(l,w,h), name + "_visual", orange)
@@ -156,7 +156,7 @@ if use_derivative_interpolation:
     interpolation_method = utils_derivs_interpolation.derivs_interpolation(keypoint_method, minN, maxN, jerk_threshold, iterative_error_threshold)
 else:
     interpolation_method = None
-ilqr = IterativeLinearQuadraticRegulator(system_, num_steps, beta=0.5, delta=1e-4, derivs_keypoint_method = interpolation_method)
+ilqr = IterativeLinearQuadraticRegulator(system_, num_steps, beta=0.5, delta=1e-5, derivs_keypoint_method = interpolation_method)
 
 # Define the optimization problem
 ilqr.SetInitialState(x0)
