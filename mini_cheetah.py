@@ -13,14 +13,14 @@ from pydrake.all import *
 from ilqr import IterativeLinearQuadraticRegulator
 import utils_derivs_interpolation
 
-meshcat_visualisation = False
+meshcat_visualisation = True
 
 ####################################
 # Parameters
 ####################################
 
-T = 0.2
-dt = 4e-3
+T = 1.0
+dt = 1e-3
 playback_rate = 0.2
 target_vel = 1.00   # m/s
 
@@ -33,7 +33,7 @@ jerk_threshold = 0.3                    # Jerk threshold to trigger new key-poin
 iterative_error_threshold = 10          # Error threshold to trigger new key-point (only used in iterativeError)
 
 # MPC parameters
-num_resolves = 100  # total number of times to resolve the optimizaiton problem
+num_resolves = 10  # total number of times to resolve the optimizaiton problem
 replan_steps = 4    # number of timesteps after which to move the horizon and
                     # re-solve the MPC problem (>0)
 
@@ -75,8 +75,8 @@ mesh_type = HydroelasticContactRepresentation.kPolygon  # Triangle or Polygon
 mu_static = 0.6
 mu_dynamic = 0.5
 
-dissipation = 0
-hydroelastic_modulus = 5e6
+dissipation = 1.0
+hydroelastic_modulus = 1e7
 resolution_hint = 0.1
 
 ####################################
@@ -114,6 +114,7 @@ def create_system_model(plant):
 ####################################
 builder = DiagramBuilder()
 plant, scene_graph = AddMultibodyPlantSceneGraph(builder, dt)
+plant.set_discrete_contact_solver(DiscreteContactSolver.kSap)
 plant = create_system_model(plant)
 
 # Connect to visualizer
@@ -138,6 +139,7 @@ plant_context = diagram.GetMutableSubsystemContext(plant, diagram_context)
 # Create a system model (w/o visualizer) to do the optimization over 
 builder_ = DiagramBuilder() 
 plant_, scene_graph_ = AddMultibodyPlantSceneGraph(builder_, dt)
+plant_.set_discrete_contact_solver(DiscreteContactSolver.kSap)
 plant_ = create_system_model(plant_)
 builder_.ExportInput(plant_.get_actuation_input_port(), "control")
 system_ = builder_.Build()
