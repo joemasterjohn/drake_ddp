@@ -19,10 +19,10 @@ meshcat_visualisation = True
 # Parameters
 ####################################
 
-T = 1.0
-dt = 1e-3
+T = 2.0
+dt = 5e-3
 playback_rate = 0.2
-target_vel = 1.00   # m/s
+target_vel = 1.0   # m/s
 
 # Parameters for derivative interpolation
 use_derivative_interpolation = False    # Use derivative interpolation
@@ -33,23 +33,42 @@ jerk_threshold = 0.3                    # Jerk threshold to trigger new key-poin
 iterative_error_threshold = 10          # Error threshold to trigger new key-point (only used in iterativeError)
 
 # MPC parameters
-num_resolves = 10  # total number of times to resolve the optimizaiton problem
+num_resolves = 100    # total number of times to resolve the optimizaiton problem
 replan_steps = 4    # number of timesteps after which to move the horizon and
                     # re-solve the MPC problem (>0)
 
 # Some useful definitions
 q0 = np.asarray([ 1.0, 0.0, 0.0, 0.0,      # base orientation
-                  0.0, 0.0, 0.29,          # base position
+                  0.0, 0.0, 0.3,          # base position
                   0.0,-0.8, 1.6,
                   0.0,-0.8, 1.6,
                   0.0,-0.8, 1.6,
                   0.0,-0.8, 1.6])
-u_stand = np.array([ 0.16370625,  0.42056475, -3.06492254,  0.16861717,  0.14882384,
-       -2.43250739,  0.08305763,  0.26016952, -2.74586461,  0.08721941,
-        0.02331732, -2.18319231])
+
+#u_stand = np.array([ 0.16370625,  0.42056475, -3.06492254,  0.16861717,  0.14882384,
+#       -2.43250739,  0.08305763,  0.26016952, -2.74586461,  0.08721941,
+#        0.02331732, -2.18319231])
+u_stand = np.zeros(12)
+
+
+## Obtained by simulating the stand state with PD control and observing the net actuation port and the state output port.
+#q0 = np.asarray([  9.99987378e-01, -4.93395609e-03, 1.19910035e-03, 6.73311887e-06,
+#                   6.66838444e-04,  2.88449023e-03, 2.87084325e-01,
+#                   7.33494285e-05, -8.00025792e-01, 1.60032231e+00,
+#                  -1.04058857e-04, -8.00016957e-01, 1.60023788e+00,
+#                   6.07881726e-05, -8.00022779e-01, 1.60029350e+00,
+#                  -9.06556850e-05, -8.00014010e-01, 1.60020974e+00])
+#u_stand = np.array([-0.73349413, 0.25792216, -3.22311433, 1.04058869, 0.1695724, -2.37879639,
+#                    -0.60788175, 0.22778537, -2.93497969, 0.9065568, 0.14010189, -2.09741932])
+
+legs_q0 = np.asarray([0.0,-0.8, 1.6,
+                      0.0,-0.8, 1.6,
+                      0.0,-0.8, 1.6,
+                      0.0,-0.8, 1.6])
 
 # Initial state
 x0 = np.hstack([q0, np.zeros(18)])
+legs_x0 = np.hstack([legs_q0, np.zeros(12)])
 
 # Target state
 x_nom = np.hstack([q0, np.zeros(18)])
@@ -75,7 +94,7 @@ mesh_type = HydroelasticContactRepresentation.kPolygon  # Triangle or Polygon
 mu_static = 0.6
 mu_dynamic = 0.5
 
-dissipation = 1.0
+dissipation = 1.25
 hydroelastic_modulus = 1e7
 resolution_hint = 0.1
 
@@ -87,7 +106,7 @@ def create_system_model(plant):
 
     # Add the kinova arm model from urdf (rigid hydroelastic contact included)
     urdf = "models/mini_cheetah/mini_cheetah_mesh.urdf"
-    arm = Parser(plant).AddModelFromFile(urdf)
+    model_instance = Parser(plant).AddModelFromFile(urdf)
 
     # Add a ground with compliant hydroelastic contact
     ground_props = ProximityProperties()
@@ -99,15 +118,15 @@ def create_system_model(plant):
     ground_shape = Box(25,25,1)
     plant.RegisterCollisionGeometry(plant.world_body(), X_ground,
             ground_shape, "ground_collision", ground_props)
-    #plant.RegisterVisualGeometry(plant.world_body(), X_ground,
-    #        ground_shape, "ground_visual", np.array([1,0,0,0.5]))
+    plant.RegisterVisualGeometry(plant.world_body(), X_ground,
+            ground_shape, "ground_visual", np.array([0.6,0.3,0,0.2]))
 
     # Choose contact model
     plant.set_contact_surface_representation(mesh_type)
     plant.set_contact_model(contact_model)
     plant.Finalize()
 
-    return plant
+    return plant, model_instance
 
 ####################################
 # Create system diagram
@@ -115,7 +134,7 @@ def create_system_model(plant):
 builder = DiagramBuilder()
 plant, scene_graph = AddMultibodyPlantSceneGraph(builder, dt)
 plant.set_discrete_contact_solver(DiscreteContactSolver.kSap)
-plant = create_system_model(plant)
+plant, model_instance = create_system_model(plant)
 
 # Connect to visualizer
 if meshcat_visualisation:
@@ -123,6 +142,12 @@ if meshcat_visualisation:
     visualizer = MeshcatVisualizer.AddToBuilder( 
         builder, scene_graph, meshcat,
         MeshcatVisualizerParams(role=Role.kPerception, prefix="visual"))
+#    contact_viz = ContactVisualizer.AddToBuilder(
+#        builder, plant, meshcat,
+#        ContactVisualizerParams(
+#            publish_period= 1.0 / 256.0,
+#            newtons_per_meter= 2e1,
+#            newton_meters_per_meter= 1e-1))
 else:
     DrakeVisualizer().AddToBuilder(builder, scene_graph)
     ConnectContactResultsToDrakeVisualizer(builder, plant, scene_graph)
@@ -140,7 +165,7 @@ plant_context = diagram.GetMutableSubsystemContext(plant, diagram_context)
 builder_ = DiagramBuilder() 
 plant_, scene_graph_ = AddMultibodyPlantSceneGraph(builder_, dt)
 plant_.set_discrete_contact_solver(DiscreteContactSolver.kSap)
-plant_ = create_system_model(plant_)
+plant_, model_instance_ = create_system_model(plant_)
 builder_.ExportInput(plant_.get_actuation_input_port(), "control")
 system_ = builder_.Build()
 
@@ -238,20 +263,35 @@ while True:
         time.sleep(1/playback_rate*dt-4e-4)
     time.sleep(1)
 
-#####################################
-## Run Simulation
-#####################################
-#
+####################################
+# Run Simulation
+####################################
+
 ## Fix input
-#plant.get_actuation_input_port().FixValue(plant_context, np.zeros(plant.num_actuators()))
+##plant.get_actuation_input_port().FixValue(plant_context, np.zeros(plant.num_actuators()))
 ##plant.get_actuation_input_port().FixValue(plant_context, u_stand)
+#
+## This assumes the joint actuator indices match the joint indices.
+#plant.get_desired_state_input_port(model_instance).FixValue(plant_context, legs_x0)
 #
 ## Set initial state
 #plant.SetPositionsAndVelocities(plant_context, x0)
 #
+#
+#def monitor(context):
+#    plant_context = plant.GetMyContextFromRoot(context)
+#    print(plant.get_net_actuation_output_port().Eval(plant_context))
+#    print(plant.get_state_output_port().Eval(plant_context))
+#    return EventStatus.Succeeded()
+#
 ## Simulate the system
 #simulator = Simulator(diagram, diagram_context)
+#simulator.set_monitor(monitor)
 #simulator.set_target_realtime_rate(playback_rate)
 #simulator.set_publish_every_time_step(True)
 #
+#input("Press [Enter] to continue...")
+#
 #simulator.AdvanceTo(T)
+#
+#input("Press [Enter] to continue...")

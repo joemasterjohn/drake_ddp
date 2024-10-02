@@ -318,7 +318,7 @@ class IterativeLinearQuadraticRegulator():
                     # If dynamics are infeasible, consider the loss to be infinite 
                     # and stop simulating. This will lead to a reduction in eps
                     print("Warning: encountered infeasible simulation in linesearch")
-                    #print(e)
+                    print(e)
                     L = np.inf
                     break
 
