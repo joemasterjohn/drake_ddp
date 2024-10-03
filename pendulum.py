@@ -39,7 +39,7 @@ Qf = 100*np.diag([1,1])
 
 def create_system_model(plant):
     urdf = FindResourceOrThrow("drake/examples/pendulum/Pendulum.urdf")
-    robot = Parser(plant=plant).AddModelFromFile(urdf)
+    [robot] = Parser(plant=plant).AddModels(urdf)
     plant.Finalize()
     return plant
 
@@ -48,8 +48,11 @@ def create_system_model(plant):
 ####################################
 
 builder = DiagramBuilder()
-
-plant, scene_graph = AddMultibodyPlantSceneGraph(builder, dt)
+config = MultibodyPlantConfig(
+    discrete_contact_approximation = "sap",
+    time_step=dt,
+    use_sampled_output_ports=False)
+plant, scene_graph = AddMultibodyPlant(config, builder)
 plant = create_system_model(plant)
 assert plant.geometry_source_is_registered()
 
@@ -72,6 +75,7 @@ plant_context = diagram.GetMutableSubsystemContext(
 
 # Create system model for the solver to use
 plant_ = MultibodyPlant(dt)
+ApplyMultibodyPlantConfig(config, plant_)
 plant_ = create_system_model(plant_)
 input_port_index = plant_.get_actuation_input_port().get_index()
 

@@ -107,7 +107,11 @@ def create_system_model(plant):
 # Create system diagram
 ####################################
 builder = DiagramBuilder()
-plant, scene_graph = AddMultibodyPlantSceneGraph(builder, dt)
+config = MultibodyPlantConfig(
+    discrete_contact_approximation = "lagged",
+    time_step=dt,
+    use_sampled_output_ports=False)
+plant, scene_graph = AddMultibodyPlant(config, builder)
 plant = create_system_model(plant)
 
 # Connect to visualizer
@@ -133,7 +137,7 @@ plant_context = diagram.GetMutableSubsystemContext(plant, diagram_context)
 # has a single input port for the control and doesn't include
 # any visualizer stuff. 
 builder_ = DiagramBuilder()
-plant_, scene_graph_ = AddMultibodyPlantSceneGraph(builder_, dt)
+plant_, scene_graph_ = AddMultibodyPlant(config, builder_)
 plant_ = create_system_model(plant_)
 builder_.ExportInput(plant_.get_actuation_input_port(), "control")
 system_ = builder_.Build()

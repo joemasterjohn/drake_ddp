@@ -29,7 +29,7 @@ meshcat_visualisation = False
 # Parameters
 ####################################
 
-T = 0.5
+T = 1
 dt = 1e-2
 playback_rate = 0.125
 
@@ -52,18 +52,18 @@ radius = 0.1   # of ball
 q_ball_start = np.array([0,0,0,1,0.6,0.0,radius])
 q_ball_target = np.array([0,0,0,1,0.6,0.0,radius])
 if scenario == "lift":
-    q_ball_start[4] = 0.155  # ball starts close to the base
+    q_ball_start[4] = 0.5     # ball starts close to the base
     q_ball_target[6] += 0.2   # goal is to lift it in the air
 elif scenario == "forward":
     q_ball_target[4] += 0.2   # goal is to move the ball forward
 elif scenario == "side":
-    q_ball_target[5] += 0.15  # goal is to move the ball to the side
+    q_ball_target[5] -= .4  # goal is to move the ball to the side
 else:
     raise RuntimeError("Unknown scenario %s"%scenario)
 
 # Initial state
 q_start = q_push
-if scenario == "lift":
+if scenario == "lift" and False:
     q_start = q_wrap
 x0 = np.hstack([q_start, q_ball_start, np.zeros(13)])
 
@@ -92,11 +92,11 @@ dissipation = 5.0              # controls "bounciness" of collisions: lower is b
 hydroelastic_modulus = 5e6     # controls "squishiness" of collisions: lower is squishier
 resolution_hint = 0.05         # smaller means a finer mesh
 
-mu_static = 0.3
-mu_dynamic = 0.2
+mu_static = 1
+mu_dynamic = 0.6
 
 contact_model = ContactModel.kHydroelastic  # Hydroelastic, Point, or HydroelasticWithFallback
-mesh_type = HydroelasticContactRepresentation.kTriangle  # Triangle or Polygon
+mesh_type = HydroelasticContactRepresentation.kPolygon  # Triangle or Polygon
 
 ####################################
 # Tools for system setup
@@ -149,10 +149,6 @@ def create_system_model(plant, scene_graph):
     set_one = GeometrySet(gripper_ids)
     set_two = GeometrySet(arm_ids)
 
-    collision_filter = CollisionFilterDeclaration()
-    collision_filter.ExcludeBetween(set_one, set_two)
-    scene_graph.collision_filter_manager().Apply(collision_filter)
-
     # Add a ground with compliant hydroelastic contact
     ground_props = ProximityProperties()
     AddCompliantHydroelasticProperties(resolution_hint, hydroelastic_modulus,ground_props)
@@ -161,8 +157,15 @@ def create_system_model(plant, scene_graph):
     X_ground = RigidTransform()
     X_ground.set_translation([0,0,-0.5])
     ground_shape = Box(25,25,1)
-    plant.RegisterCollisionGeometry(plant.world_body(), X_ground,
-            ground_shape, "ground_collision", ground_props)
+    floor_id = plant.RegisterCollisionGeometry(plant.world_body(), X_ground,
+                   ground_shape, "ground_collision", ground_props)
+    set_three = GeometrySet([floor_id])
+
+    collision_filter = CollisionFilterDeclaration()
+    collision_filter.ExcludeBetween(set_one, set_two)
+    collision_filter.ExcludeBetween(set_three, set_one)
+    collision_filter.ExcludeBetween(set_three, set_two)
+    scene_graph.collision_filter_manager().Apply(collision_filter)
 
     # Add a ball with compliant hydroelastic contact
     mass = 0.258
@@ -179,6 +182,12 @@ def create_system_model(plant, scene_graph):
 
     color = np.array([0.8,1.0,0.0,0.5])
     plant.RegisterVisualGeometry(ball, X_ball, Sphere(radius), "ball_visual", color)
+
+    # Add a visual of the ball's target position
+    X_ball_target = RigidTransform()
+    X_ball_target.set_translation(q_ball_target[4:7])
+    target_color = np.array([1.0, 0.0, 0.0, 0.2])
+    plant.RegisterVisualGeometry(plant.world_body(), X_ball_target, Sphere(radius), "ball_target_visual", target_color)
 
     # Add some spots to visualize the ball's roation
     spot_color = np.array([0.0,0.00,0.0,0.5])
@@ -216,7 +225,11 @@ def create_system_model(plant, scene_graph):
 # Create system diagram
 ####################################
 builder = DiagramBuilder()
-plant, scene_graph = AddMultibodyPlantSceneGraph(builder, dt)
+config = MultibodyPlantConfig(
+    discrete_contact_approximation = "lagged",
+    time_step=dt,
+    use_sampled_output_ports=False)
+plant, scene_graph = AddMultibodyPlant(config, builder)
 plant, scene_graph = create_system_model(plant, scene_graph)
 
 # Connect to visualizer
@@ -243,7 +256,7 @@ plant_context = diagram.GetMutableSubsystemContext(plant, diagram_context)
 if optimize:
     # Create a system model (w/o visualizer) to do the optimization over
     builder_ = DiagramBuilder()
-    plant_, scene_graph_ = AddMultibodyPlantSceneGraph(builder_, dt)
+    plant_, scene_graph_ = AddMultibodyPlant(config, builder_)
     plant_, scene_graph_ = create_system_model(plant_, scene_graph_)
     builder_.ExportInput(plant_.get_actuation_input_port(), "control")
     system_ = builder_.Build()
@@ -256,7 +269,7 @@ if optimize:
     else:
         interpolation_method = None
     ilqr = IterativeLinearQuadraticRegulator(system_, num_steps, 
-            beta=0.5, delta=1e-3, gamma=0, derivs_keypoint_method = interpolation_method)
+            beta=0.5, delta=1e-4, gamma=0, derivs_keypoint_method = interpolation_method)
 
     # Define the optimization problem
     ilqr.SetInitialState(x0)
