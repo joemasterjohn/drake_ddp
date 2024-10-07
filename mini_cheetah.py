@@ -20,30 +20,30 @@ meshcat_visualisation = False
 ####################################
 
 T = 0.2
-dt = 2e-2
+dt = 1e-2
 playback_rate = 0.2
 target_vel = 1   # m/s
 
 # Parameters for derivative interpolation
 use_derivative_interpolation = False    # Use derivative interpolation
 keypoint_method = 'adaptiveJerk'        # 'setInterval, or 'adaptiveJerk' or 'iterativeError'
-minN = 2                                # Minimum interval between key-points   
+minN = 1                                # Minimum interval between key-points   
 maxN = 20                               # Maximum interval between key-points
 jerk_threshold = 0.3                    # Jerk threshold to trigger new key-point (only used in adaptiveJerk)
 iterative_error_threshold = 10          # Error threshold to trigger new key-point (only used in iterativeError)
 
 # MPC parameters
-num_resolves = 20  # total number of times to resolve the optimizaiton problem
-replan_steps = 5    # number of timesteps after which to move the horizon and
+num_resolves = 150  # total number of times to resolve the optimizaiton problem
+replan_steps = 2    # number of timesteps after which to move the horizon and
                      # re-solve the MPC problem (>0)
 
 # Some useful definitions
-q0 = np.asarray([ 1.0, 0.0, 0.0, 0.0,      # base orientation
-                  0.0, 0.0, 0.29,          # base position
+q0 = np.asarray([ 1.0, 0.0, -1.0, 0.0,      # base orientation
+                  0.0, 0.0, 0.58,          # base position
                   0.0,-0.8, 1.6,
                   0.0,-0.8, 1.6,
-                  0.0,-0.8, 1.6,
-                  0.0,-0.8, 1.6])
+                  0.0,-0.8, -0.55,
+                  0.0,-0.8, -0.55])
 u_stand = np.array([ 0.16370625,  0.42056475, -3.06492254,  0.16861717,  0.14882384,
        -2.43250739,  0.08305763,  0.26016952, -2.74586461,  0.08721941,
         0.02331732, -2.18319231])
@@ -58,11 +58,10 @@ x_nom[22] += target_vel  # base x velocity
 
 # Quadratic cost
 Qq_base = np.ones(7)
-Qq_base[0:4] += 10
-Qq_base[6] += 0
+Qq_base[0:4] = 0.25
 Qv_base = np.ones(6)
 
-Qq_legs = 2*np.ones(12)
+Qq_legs = 0.0*np.ones(12)
 Qv_legs = 0.01*np.ones(12)
 
 Q = np.diag(np.hstack([Qq_base,Qq_legs,0.01*Qv_base,Qv_legs]))
@@ -70,14 +69,15 @@ R = 0.01*np.eye(12)
 Qf = np.diag(np.hstack([5*Qq_base,0.1+Qq_legs,Qv_base,Qv_legs]))
 
 # Contact model parameters
-contact_model = ContactModel.kHydroelastic  # Hydroelastic, Point, or HydroelasticWithFallback
+#contact_model = ContactModel.kHydroelastic  # Hydroelastic, Point, or HydroelasticWithFallback
+contact_model = ContactModel.kPoint  # Hydroelastic, Point, or HydroelasticWithFallback
 mesh_type = HydroelasticContactRepresentation.kPolygon  # Triangle or Polygon
 
-mu_static = 0.6
-mu_dynamic = 0.5
+mu_static = 0.4
+mu_dynamic = 0.4
 
-dissipation = 40
-hydroelastic_modulus = 2.5e6
+dissipation = 5
+hydroelastic_modulus = 5e6
 resolution_hint = 0.1
 
 ####################################
@@ -115,8 +115,9 @@ def create_system_model(plant):
 ####################################
 builder = DiagramBuilder()
 config = MultibodyPlantConfig(
-    discrete_contact_approximation = "lagged",
+    discrete_contact_approximation = "similar",
     time_step=dt,
+    penetration_allowance=1e-3,
     stiction_tolerance=1e-2,
     use_sampled_output_ports=False)
 plant, scene_graph = AddMultibodyPlant(config, builder)
@@ -172,7 +173,7 @@ if use_derivative_interpolation:
 else:
     interpolation_method = None
 ilqr = IterativeLinearQuadraticRegulator(system_, num_steps, 
-        beta=0.5, delta=1e-2, gamma=0, derivs_keypoint_method=interpolation_method)
+        beta=0.8, delta=1e-2, gamma=0.2, derivs_keypoint_method=interpolation_method)
 
 # Define the optimization problem
 ilqr.SetTargetState(x_nom)

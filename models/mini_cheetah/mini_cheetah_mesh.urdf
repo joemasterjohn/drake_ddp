@@ -34,9 +34,7 @@
         <origin rpy="0 0 0" xyz="0.19 0.049 0.0"/>
         <parent link="body"/>
         <child link="abduct_fl"/>
-        <!--<limit effort="18" lower="-1.6" upper="1.6" velocity="40"/>-->
-        <!--<limit effort="20" lower="-0.7" upper="0.7" velocity="40"/>-->
-        <limit effort="1e-16" lower="0" upper="0" velocity="40"/>
+        <limit effort="18" lower="-1.6" upper="1.6" velocity="40"/>
         <dynamics damping="0.5" /> 
     </joint>
     <link name="abduct_fl">
@@ -83,8 +81,7 @@
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.062 0.00"/>
         <parent link="abduct_fl"/>
         <child link="thigh_fl"/>
-        <!--<limit effort="18" lower="-2.6" upper="2.6" velocity="40"/>-->
-        <limit effort="20" lower="-1.5" upper="1.5" velocity="40"/>
+        <limit effort="18" lower="-2.6" upper="2.6" velocity="40"/>
         <dynamics damping="0.5" /> 
     </joint>
     <link name="thigh_fl">
@@ -119,8 +116,7 @@
         <origin rpy="0.0 0 0.0" xyz="0.0 0.0 -0.209"/>
         <parent link="thigh_fl"/>
         <child link="shank_fl"/>
-        <!--<limit effort="26" lower="-2.6" upper="2.6" velocity="26"/>-->
-        <limit effort="20" lower="-1.5" upper="1.5" velocity="40"/>
+        <limit effort="26" lower="-2.6" upper="2.6" velocity="26"/>
         <dynamics damping="0.5" /> 
     </joint>
     <link name="shank_fl">
@@ -158,9 +154,7 @@
         <origin rpy="0 0 0" xyz="0.19 -0.049 0.0"/>
         <parent link="body"/>
         <child link="abduct_fr"/>
-        <!--<limit effort="18" lower="-1.6" upper="1.6" velocity="40"/>-->
-        <!--<limit effort="20" lower="-0.7" upper="0.7" velocity="40"/>-->
-        <limit effort="1e-16" lower="0" upper="0" velocity="40"/>
+        <limit effort="18" lower="-1.6" upper="1.6" velocity="40"/>
         <dynamics damping="0.5" /> 
     </joint>
     <link name="abduct_fr">
@@ -196,8 +190,7 @@
         <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.062 0.00"/>
         <parent link="abduct_fr"/>
         <child link="thigh_fr"/>
-        <!--<limit effort="18" lower="-2.6" upper="2.6" velocity="40"/>-->
-        <limit effort="20" lower="-1.5" upper="1.5" velocity="40"/>
+        <limit effort="18" lower="-2.6" upper="2.6" velocity="40"/>
         <dynamics damping="0.5" /> 
     </joint>
     <link name="thigh_fr">
@@ -232,8 +225,7 @@
         <origin rpy="0.0 0 0.0" xyz="0.0 0.0 -0.209"/>
         <parent link="thigh_fr"/>
         <child link="shank_fr"/>
-        <!--<limit effort="26" lower="-2.6" upper="2.6" velocity="26"/>-->
-        <limit effort="20" lower="-1.5" upper="1.5" velocity="40"/>
+        <limit effort="26" lower="-2.6" upper="2.6" velocity="26"/>
         <dynamics damping="0.5" /> 
     </joint>
     <link name="shank_fr">
@@ -271,9 +263,7 @@
         <origin rpy="0 0 0" xyz="-0.19 0.049 0.0"/>
         <parent link="body"/>
         <child link="abduct_hl"/>
-        <!--<limit effort="18" lower="-1.6" upper="1.6" velocity="40"/>-->
-        <!--<limit effort="20" lower="-0.7" upper="0.7" velocity="40"/>-->
-        <limit effort="1e-16" lower="0" upper="0" velocity="40"/>
+        <limit effort="18" lower="-1.6" upper="1.6" velocity="40"/>
         <dynamics damping="0.5" /> 
     </joint>
     <link name="abduct_hl">
@@ -309,8 +299,7 @@
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.062 0.00"/>
         <parent link="abduct_hl"/>
         <child link="thigh_hl"/>
-        <!--<limit effort="18" lower="-2.6" upper="2.6" velocity="40"/>-->
-        <limit effort="20" lower="-1.5" upper="1.5" velocity="40"/>
+        <limit effort="18" lower="-2.6" upper="2.6" velocity="40"/>
         <dynamics damping="0.5" /> 
     </joint>
     <link name="thigh_hl">
@@ -345,8 +334,7 @@
         <origin rpy="0.0 0 0.0" xyz="0.0 0.0 -0.209"/>
         <parent link="thigh_hl"/>
         <child link="shank_hl"/>
-        <!--<limit effort="26" lower="-2.6" upper="2.6" velocity="26"/>-->
-        <limit effort="20" lower="-1.5" upper="1.5" velocity="40"/>
+        <limit effort="26" lower="-2.6" upper="2.6" velocity="26"/>
         <dynamics damping="0.5" /> 
     </joint>
     <link name="shank_hl">
@@ -384,9 +372,7 @@
         <origin rpy="0 0 0" xyz="-0.19 -0.049 0.0"/>
         <parent link="body"/>
         <child link="abduct_hr"/>
-        <!--<limit effort="18" lower="-1.6" upper="1.6" velocity="40"/>-->
-        <!--<limit effort="20" lower="-0.7" upper="0.7" velocity="40"/>-->
-        <limit effort="1e-16" lower="0" upper="0" velocity="40"/>
+        <limit effort="18" lower="-1.6" upper="1.6" velocity="40"/>
         <dynamics damping="0.5" /> 
     </joint>
     <link name="abduct_hr">
@@ -422,8 +408,7 @@
         <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.062 0.00"/>
         <parent link="abduct_hr"/>
         <child link="thigh_hr"/>
-        <!--<limit effort="18" lower="-2.6" upper="2.6" velocity="40"/>-->
-        <limit effort="20" lower="-1.5" upper="1.5" velocity="40"/>
+        <limit effort="18" lower="-2.6" upper="2.6" velocity="40"/>
         <dynamics damping="0.5" /> 
     </joint>
     <link name="thigh_hr">
@@ -458,8 +443,7 @@
         <origin rpy="0.0 0 0.0" xyz="0.0 0.0 -0.209"/>
         <parent link="thigh_hr"/>
         <child link="shank_hr"/>
-        <!--<limit effort="26" lower="-2.6" upper="2.6" velocity="26"/>-->
-        <limit effort="20" lower="-1.5" upper="1.5" velocity="40"/>
+        <limit effort="26" lower="-2.6" upper="2.6" velocity="26"/>
         <dynamics damping="0.5" /> 
     </joint>
     <link name="shank_hr">
