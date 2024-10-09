@@ -21,8 +21,8 @@ meshcat_visualisation = False
 
 T = 0.2
 dt = 1e-2
-playback_rate = 0.2
-target_vel = 1   # m/s
+playback_rate = 1
+target_vel = 0.5   # m/s
 
 # Parameters for derivative interpolation
 use_derivative_interpolation = False    # Use derivative interpolation
@@ -33,32 +33,37 @@ jerk_threshold = 0.3                    # Jerk threshold to trigger new key-poin
 iterative_error_threshold = 10          # Error threshold to trigger new key-point (only used in iterativeError)
 
 # MPC parameters
-num_resolves = 150  # total number of times to resolve the optimizaiton problem
+num_resolves = 300  # total number of times to resolve the optimizaiton problem
 replan_steps = 2    # number of timesteps after which to move the horizon and
                      # re-solve the MPC problem (>0)
 
+theta = 80*math.pi/180
+
 # Some useful definitions
-q0 = np.asarray([ 1.0, 0.0, -1.0, 0.0,      # base orientation
-                  0.0, 0.0, 0.58,          # base position
+q0 = np.asarray([ math.cos(theta/2), 0.0, -math.sin(theta/2), 0.0,      # base orientation
+                  0.0, 0.0, 0.6,          # base position
                   0.0,-0.8, 1.6,
                   0.0,-0.8, 1.6,
                   0.0,-0.8, -0.55,
                   0.0,-0.8, -0.55])
-u_stand = np.array([ 0.16370625,  0.42056475, -3.06492254,  0.16861717,  0.14882384,
-       -2.43250739,  0.08305763,  0.26016952, -2.74586461,  0.08721941,
-        0.02331732, -2.18319231])
+#u_stand = np.array([ 0.16370625,  0.42056475, -3.06492254,  0.16861717,  0.14882384,
+#       -2.43250739,  0.08305763,  0.26016952, -2.74586461,  0.08721941,
+#        0.02331732, -2.18319231])
+
+u_stand = np.zeros(12)
 
 # Initial state
 x0 = np.hstack([q0, np.zeros(18)])
+x0[22] = target_vel
 
 # Target state
 x_nom = np.hstack([q0, np.zeros(18)])
 x_nom[4] += target_vel*T  # base x position
-x_nom[22] += target_vel  # base x velocity
+x_nom[22] += 1.0*target_vel  # base x velocity
 
 # Quadratic cost
-Qq_base = np.ones(7)
-Qq_base[0:4] = 0.25
+Qq_base = 2*np.ones(7)
+Qq_base[0:4] += 4
 Qv_base = np.ones(6)
 
 Qq_legs = 0.0*np.ones(12)
@@ -73,10 +78,10 @@ Qf = np.diag(np.hstack([5*Qq_base,0.1+Qq_legs,Qv_base,Qv_legs]))
 contact_model = ContactModel.kPoint  # Hydroelastic, Point, or HydroelasticWithFallback
 mesh_type = HydroelasticContactRepresentation.kPolygon  # Triangle or Polygon
 
-mu_static = 0.4
-mu_dynamic = 0.4
+mu_static = 0.5
+mu_dynamic = 0.5
 
-dissipation = 5
+dissipation = 0
 hydroelastic_modulus = 5e6
 resolution_hint = 0.1
 
