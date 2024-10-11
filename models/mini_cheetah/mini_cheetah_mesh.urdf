@@ -14,6 +14,7 @@
             </geometry>
             <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
         </visual>
+        <!--
         <collision>
             <geometry>
                 <box size="0.23 0.19 0.1"/>
@@ -26,6 +27,7 @@
             </drake:proximity_properties>
             <origin rpy="0 0 0" xyz="0 0 0"/>
         </collision>
+        -->
     </link>
 
     <!--!!!!!!!!!!!! Front Left Leg !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!-->
